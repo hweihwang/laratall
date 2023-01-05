@@ -34,7 +34,6 @@ class Register extends Component
         ]);
 
         /** @var User $user */
-
         event(new Registered($user));
 
         Auth::login($user, true);

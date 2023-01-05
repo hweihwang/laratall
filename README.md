@@ -44,3 +44,4 @@ Technologies Used
 - Alpine.js
 - Livewire
 - MariaDB
+- Filament

@@ -4,25 +4,22 @@ namespace App\Http\Livewire\Auth;
 
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
 
 class Register extends Component
 {
-    /** @var string */
-    public $name = '';
+    public string $name = '';
 
-    /** @var string */
-    public $email = '';
+    public string $email = '';
 
-    /** @var string */
-    public $password = '';
+    public string $password = '';
 
-    /** @var string */
-    public $passwordConfirmation = '';
+    public string $passwordConfirmation = '';
 
-    public function register()
+    public function register(): RedirectResponse
     {
         $this->validate([
             'name' => ['required'],
@@ -30,11 +27,13 @@ class Register extends Component
             'password' => ['required', 'min:8', 'same:passwordConfirmation'],
         ]);
 
-        $user = User::create([
+        $user = User::query()->create([
             'email' => $this->email,
             'name' => $this->name,
             'password' => Hash::make($this->password),
         ]);
+
+        /** @var User $user */
 
         event(new Registered($user));
 

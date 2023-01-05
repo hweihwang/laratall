@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/app/Dockerfile
+    container_name: app_${APP_NAME}
+#    restart: unless-stopped
+#    tty: true
+    command: >
+      sh -c
+         'composer update -o --no-interaction \
+          && composer dump-autoload -o \
+          && php artisan octane:install --server=swoole \
+          && npm install \
+          && php artisan migrate \
+          && php artisan optimize \
+          && php artisan event:cache \
+          && php artisan config:cache \
+          && php artisan route:cache \
+          && php artisan view:cache \
+          && vendor/bin/pint \
+          && php artisan octane:start --server=swoole --host=0.0.0.0 --port=9000 --watch'
+    ports:
+      - "${APP_PORT}:9000"
+    depends_on:
+      - mariadb
+    volumes:
+      - ./app/:/var/www/html/
+      - ./docker/app/php.ini:/usr/local/etc/php/conf.d/php.ini
+    networks:
+      - dev
+
+  vite-dev-server:
+    image: tall-test-app
+    container_name: vite-dev-server_${APP_NAME}
+    restart: unless-stopped
+    tty: true
+    command: >
+      sh -c
+         'npm run dev'
+    ports:
+      - "${VITE_DEV_PORT}:5173"
+    volumes:
+      - ./app/:/var/www/html/
+      - ./docker/app/php.ini:/usr/local/etc/php/conf.d/php.ini
+    depends_on:
+      - app
+    networks:
+      - dev
+
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb_${APP_NAME}
+    command: --init-file /tmp/init.sql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "${MARIADB_PORT}:3306"
+    volumes:
+      - ./docker/mariadb/my.cnf:/etc/mysql/my.cnf
+      - ./docker/mariadb/data:/var/lib/mysql
+      - ./docker/mariadb/init.sql:/tmp/init.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    networks:
+      - dev
+
+networks:
+  dev:
+    driver: bridge
+    external: true
